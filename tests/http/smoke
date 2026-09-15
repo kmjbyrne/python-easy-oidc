@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+#
+# Smoke tests for the local IdP + resource server.
+# Requires: uv run uvicorn examples.combined:app --port 8000
+#
+# Run from the sdk-oauth2 repo root:
+#   tests/http/smoke
+
+set -euo pipefail
+
+IDP="http://auth.127.0.0.1.nip.io:8000"
+API="http://api.127.0.0.1.nip.io:8000"
+PASS=0
+FAIL=0
+
+check() {
+    local name="$1" expected="$2" actual="$3"
+    if [ "$actual" = "$expected" ]; then
+        echo "  PASS  $name"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL  $name (expected $expected, got $actual)"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
+echo "=== OIDC Discovery ==="
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$IDP/.well-known/openid-configuration")
+check "discovery returns 200" "200" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$IDP/.well-known/jwks.json")
+check "jwks returns 200" "200" "$status"
+
+echo ""
+echo "=== Token Minting ==="
+
+response=$(curl -s "$IDP/token" \
+    -H 'Content-Type: application/json' \
+    -d '{"subject": "test-user", "roles": ["admin"], "permissions": ["orders.read", "orders.write"]}')
+
+TOKEN=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" 2>/dev/null || echo "")
+check "mint token succeeds" "false" "$([ -z "$TOKEN" ] && echo true || echo false)"
+
+echo ""
+echo "=== Authenticated Requests ==="
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/me" \
+    -H "Authorization: Bearer $TOKEN")
+check "GET /me with valid token" "200" "$status"
+
+subject=$(curl -s "$API/me" -H "Authorization: Bearer $TOKEN" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['subject'])")
+check "GET /me returns correct subject" "test-user" "$subject"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/orders" \
+    -H "Authorization: Bearer $TOKEN")
+check "GET /orders with orders.read" "200" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/orders" \
+    -H "Authorization: Bearer $TOKEN")
+check "POST /orders with orders.write" "200" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/admin" \
+    -H "Authorization: Bearer $TOKEN")
+check "GET /admin with admin role" "200" "$status"
+
+echo ""
+echo "=== Missing / Invalid Auth ==="
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/me")
+check "GET /me without token" "401" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/me" \
+    -H "Authorization: Bearer garbage")
+check "GET /me with invalid token" "401" "$status"
+
+echo ""
+echo "=== Insufficient Permissions ==="
+
+response=$(curl -s "$IDP/token" \
+    -H 'Content-Type: application/json' \
+    -d '{"subject": "viewer", "roles": ["viewer"], "permissions": []}')
+
+VIEWER_TOKEN=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/me" \
+    -H "Authorization: Bearer $VIEWER_TOKEN")
+check "GET /me as viewer" "200" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/orders" \
+    -H "Authorization: Bearer $VIEWER_TOKEN")
+check "GET /orders without orders.read" "403" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/orders" \
+    -H "Authorization: Bearer $VIEWER_TOKEN")
+check "POST /orders without orders.write" "403" "$status"
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/admin" \
+    -H "Authorization: Bearer $VIEWER_TOKEN")
+check "GET /admin without admin role" "403" "$status"
+
+echo ""
+echo "=== Expired Token ==="
+
+response=$(curl -s "$IDP/token" \
+    -H 'Content-Type: application/json' \
+    -d '{"subject": "expired-user", "lifetime": -1}')
+
+EXPIRED_TOKEN=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+status=$(curl -s -o /dev/null -w '%{http_code}' "$API/me" \
+    -H "Authorization: Bearer $EXPIRED_TOKEN")
+check "GET /me with expired token" "401" "$status"
+
+echo ""
+echo "=== Results ==="
+echo "  $PASS passed, $FAIL failed"
+[ "$FAIL" -eq 0 ] || exit 1

@@ -1,0 +1,106 @@
+[project]
+name = "oauth2"
+version = "0.1.0"
+description = "Lightweight OAuth2/OIDC SDK with optional FastAPI integration"
+readme = "README.md"
+authors = [
+    { name = "Keith Byrne", email = "keithmbyrne@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "authlib>=1.8.0",
+    "httpx>=0.28.1",
+    "joserfc>=1.7.5",
+]
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.115.0"]
+
+[build-system]
+requires = ["uv_build>=0.9.4,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[dependency-groups]
+dev = [
+    "fastapi>=0.115.0",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.7",
+    "httpx>=0.28.1",
+    "uvicorn>=0.34.0",
+]
+docs = [
+    "mkdocs-material>=9.6.0",
+    "mkdocstrings[python]>=0.29.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "N",
+    "S",
+    "A",
+    "COM",
+    "T20",
+    "RET",
+    "SIM",
+    "ARG",
+    "PTH",
+    "PL",
+]
+ignore = [
+    "E501",
+    "COM812",
+    "B008",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "D100", "D103", "D104", "PLR0913", "PLR2004", "ARG001", "ARG002", "PLC0415"]
+"examples/**/*.py" = ["S101", "S105", "T20", "PLR0913", "ARG001", "B008"]
+"oauth2/mint.py" = ["T20"]
+"oauth2/testing.py" = ["S101", "PLR2004"]
+"oauth2/contrib/fastapi.py" = ["PLC0415", "PLR0913", "PLR0917", "ARG001"]
+"oauth2/client.py" = ["S105", "PLC0415", "PLR0913", "PLR0917"]
+"oauth2/dev.py" = ["PLR0913"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["oauth2", "tests"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = ["authlib.*", "joserfc.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"

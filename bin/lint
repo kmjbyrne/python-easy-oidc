@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Lint and format code using ruff only
+#
+# Usage:
+#   bin/lint          # Check everything
+#   bin/lint --fix    # Auto-fix issues
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo "Running linters..."
+echo ""
+
+FIX_FLAG=""
+if [ "$1" = "--fix" ]; then
+    FIX_FLAG="--fix"
+    echo -e "${YELLOW}Auto-fix mode enabled${NC}"
+    echo ""
+fi
+
+echo "Ruff check (linting)..."
+if [ -n "$FIX_FLAG" ]; then
+    uv run ruff check . --fix --unsafe-fixes
+else
+    uv run ruff check .
+fi
+
+echo ""
+echo "Ruff format (code formatting)..."
+if [ -n "$FIX_FLAG" ]; then
+    uv run ruff format .
+else
+    uv run ruff format --check .
+fi
+
+echo ""
+echo "MyPy (type checking)..."
+uv run mypy oauth2/
+
+echo ""
+echo -e "${GREEN}All checks passed${NC}"
