@@ -64,7 +64,7 @@ class FakeTransport(httpx.AsyncBaseTransport):
 def _create_app() -> FastAPI:
     app = FastAPI()
 
-    app.state.auth = FastAPIAuth.from_settings(
+    app.state.auth = FastAPIAuth(
         issuer=ISSUER,
         audience=AUDIENCE,
     )

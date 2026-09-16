@@ -197,7 +197,7 @@ async def token_endpoint(request: Request):
 
 api = FastAPI()
 
-api.state.auth = FastAPIAuth.from_settings(
+api.state.auth = FastAPIAuth(
     issuer=ISSUER,
     audience=AUDIENCE,
 )

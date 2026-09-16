@@ -26,25 +26,28 @@ _bearer_scheme = HTTPBearer(auto_error=True)
 
 
 class FastAPIAuth:
-    def __init__(self, validator: TokenValidator) -> None:
-        self._validator = validator
-
-    @classmethod
-    def from_settings(
-        cls,
-        *,
+    def __init__(
+        self,
         issuer: str,
         audience: str,
+        *,
         algorithms: list[str] | None = None,
         claim_mapper: ClaimMapper | None = None,
-    ) -> "FastAPIAuth":
-        validator = TokenValidator(
+    ) -> None:
+        self._validator = TokenValidator(
             issuer=issuer,
             audience=audience,
             algorithms=algorithms,
             claim_mapper=claim_mapper,
         )
-        return cls(validator)
+
+    @classmethod
+    def from_settings(cls, settings: OIDCSettings, **kwargs: Any) -> "FastAPIAuth":
+        return cls(
+            issuer=settings.OIDC_ISSUER,
+            audience=settings.OIDC_AUDIENCE,
+            **kwargs,
+        )
 
     async def get_principal(
         self,
@@ -65,11 +68,7 @@ def configure(app: FastAPI, settings: OIDCSettings, **kwargs: Any) -> FastAPIAut
     if settings.OIDC_BYPASS:
         configure_dev(app, settings)
         return app.state.auth  # type: ignore[no-any-return]
-    auth = FastAPIAuth.from_settings(
-        issuer=settings.OIDC_ISSUER,
-        audience=settings.OIDC_AUDIENCE,
-        **kwargs,
-    )
+    auth = FastAPIAuth.from_settings(settings, **kwargs)
     app.state.auth = auth
     return auth
 
@@ -204,7 +203,4 @@ def configure_dev(app: FastAPI, settings: OIDCSettings) -> None:
 
     app.include_router(create_dev_router(issuer=issuer, audience=audience))
 
-    app.state.auth = FastAPIAuth.from_settings(
-        issuer=issuer,
-        audience=audience,
-    )
+    app.state.auth = FastAPIAuth(issuer=issuer, audience=audience)
