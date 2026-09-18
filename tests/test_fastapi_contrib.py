@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from joserfc import jwt as jose_jwt
 from joserfc.jwk import RSAKey
 
+from oauth2 import Principal
 from oauth2.contrib.fastapi import (
     FastAPIAuth,
     current_user,
@@ -140,3 +141,82 @@ def test_expired_token(client: TestClient):
     token = _make_token({"exp": int(time.time()) - 100})
     resp = client.get("/me", headers=_auth_header(token))
     assert resp.status_code == 401
+
+
+def test_unconfigured_auth_raises():
+    """An app with no auth wired must fail loudly, not serve an anonymous principal."""
+    app = FastAPI()
+
+    @app.get("/me")
+    async def me(user=Depends(current_user)):
+        return {"sub": user.subject}
+
+    client = TestClient(app, raise_server_exceptions=False)
+    resp = client.get("/me", headers=_auth_header())
+    assert resp.status_code == 500
+
+
+def test_unconfigured_auth_message():
+    app = FastAPI()
+
+    @app.get("/me")
+    async def me(user=Depends(current_user)):
+        return {"sub": user.subject}
+
+    with pytest.raises(RuntimeError, match="No FastAPIAuth configured"):
+        TestClient(app).get("/me", headers=_auth_header())
+
+
+def _override_app() -> FastAPI:
+    """An app supplying its own principal, without touching app.state."""
+
+    async def app_current_user() -> Principal:
+        raise NotImplementedError
+
+    app = FastAPI()
+
+    @app.get("/admin")
+    async def admin(
+        user=Depends(require_role("admin", user_dependency=app_current_user)),
+    ):
+        return {"sub": user.subject}
+
+    @app.get("/orders")
+    async def orders(
+        user=Depends(require_permission("orders.read", user_dependency=app_current_user)),
+    ):
+        return {"sub": user.subject}
+
+    app.state._current_user = app_current_user
+    return app
+
+
+def _sign_in(app: FastAPI, **kwargs) -> None:
+    principal = Principal(subject="u-1", issuer=ISSUER, audience=AUDIENCE, **kwargs)
+    app.dependency_overrides[app.state._current_user] = lambda: principal
+
+
+def test_guard_uses_supplied_dependency_allowed():
+    app = _override_app()
+    _sign_in(app, roles=frozenset({"admin"}), permissions=frozenset({"orders.read"}))
+    client = TestClient(app)
+    assert client.get("/admin").status_code == 200
+    assert client.get("/orders").status_code == 200
+
+
+def test_guard_uses_supplied_dependency_denied():
+    app = _override_app()
+    _sign_in(app, roles=frozenset({"viewer"}), permissions=frozenset({"orders.write"}))
+    client = TestClient(app)
+    assert client.get("/admin").status_code == 403
+    assert client.get("/orders").status_code == 403
+
+
+def test_guard_defaults_to_current_user():
+    """Omitting user_dependency keeps the app.state behaviour."""
+    import inspect
+
+    assert inspect.signature(require_role).parameters["user_dependency"].default is current_user
+    assert (
+        inspect.signature(require_permission).parameters["user_dependency"].default is current_user
+    )

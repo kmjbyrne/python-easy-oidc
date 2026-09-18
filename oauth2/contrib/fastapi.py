@@ -73,12 +73,6 @@ def configure(app: FastAPI, settings: OIDCSettings, **kwargs: Any) -> FastAPIAut
     return auth
 
 
-_BYPASS_PRINCIPAL = Principal(
-    subject="anonymous",
-    issuer="bypass",
-)
-
-
 def _get_auth(request: Request) -> FastAPIAuth | None:
     return getattr(request.app.state, "auth", None)
 
@@ -87,16 +81,33 @@ async def current_user(
     auth: FastAPIAuth | None = Depends(_get_auth),
     credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
 ) -> Principal:
+    """Resolve the caller's Principal from the bearer token.
+
+    Raises RuntimeError when no auth is configured. Returning an anonymous
+    principal instead would let an unwired app serve protected routes.
+    """
     if auth is None:
-        return _BYPASS_PRINCIPAL
+        raise RuntimeError(
+            "No FastAPIAuth configured. Set app.state.auth in your application "
+            "factory, or override the current_user dependency."
+        )
     if credentials is None:
         raise HTTPException(status_code=401, detail="Not authenticated")
     return await auth.get_principal(credentials)
 
 
-def require_role(role: str) -> Callable[..., Any]:
+def require_role(
+    role: str,
+    user_dependency: Callable[..., Any] = current_user,
+) -> Callable[..., Any]:
+    """Build a dependency admitting only callers holding ``role``.
+
+    ``user_dependency`` resolves the Principal. Override it when the app
+    supplies its own instead of reading ``app.state.auth``.
+    """
+
     async def dependency(
-        user: Principal = Depends(current_user),
+        user: Principal = Depends(user_dependency),
     ) -> Principal:
         if not user.has_role(role):
             raise HTTPException(
@@ -108,9 +119,18 @@ def require_role(role: str) -> Callable[..., Any]:
     return dependency
 
 
-def require_permission(permission: str) -> Callable[..., Any]:
+def require_permission(
+    permission: str,
+    user_dependency: Callable[..., Any] = current_user,
+) -> Callable[..., Any]:
+    """Build a dependency admitting only callers holding ``permission``.
+
+    ``user_dependency`` resolves the Principal. Override it when the app
+    supplies its own instead of reading ``app.state.auth``.
+    """
+
     async def dependency(
-        user: Principal = Depends(current_user),
+        user: Principal = Depends(user_dependency),
     ) -> Principal:
         if not user.has_permission(permission):
             raise HTTPException(

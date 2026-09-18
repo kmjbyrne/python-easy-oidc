@@ -63,7 +63,9 @@ async def create_order(
 
 ## Pattern 2: Dependency Overrides
 
-Define a stub dependency, override it in the factory:
+Define a stub dependency, override it in the factory. Nothing is stored on
+`app.state`, and the auth instance lives in the factory's scope rather than at
+module level:
 
 ```python
 async def get_current_user() -> Principal:
@@ -76,12 +78,42 @@ async def list_orders(user: Principal = Depends(get_current_user)): ...
 
 
 # In factory
-app.dependency_overrides[get_current_user] = auth.get_principal
+def create_app(settings: Settings) -> FastAPI:
+    app = FastAPI()
+    auth = FastAPIAuth(
+        issuer=settings.OIDC_ISSUER,
+        audience=settings.OIDC_AUDIENCE,
+    )
+    app.dependency_overrides[get_current_user] = auth.get_principal
+    app.include_router(orders_router)
+    return app
 ```
 
-!!! note
-    Building permission-specific dependencies requires more manual wiring with
-    this pattern, since each permission check needs its own override.
+Pass the stub to the guards so they resolve the same principal:
+
+```python
+@router.post("/orders")
+async def create_order(
+    user: Principal = Depends(
+        require_permission("orders.write", user_dependency=get_current_user),
+    ),
+): ...
+```
+
+!!! warning "Guards default to `current_user`"
+    Without `user_dependency`, `require_role` and `require_permission` resolve
+    the SDK's own `current_user`, which reads `app.state.auth`. Overriding a
+    different dependency leaves the guards reading an unconfigured app, so they
+    raise rather than admit the caller. Bind the same dependency the routes use.
+
+Fix the argument once if you use the guards often:
+
+```python
+from functools import partial
+
+require_role = partial(sdk_require_role, user_dependency=get_current_user)
+require_permission = partial(sdk_require_permission, user_dependency=get_current_user)
+```
 
 ## Pattern 3: Router Factories
 
@@ -100,12 +132,17 @@ def create_orders_router(current_user=Depends(current_user)) -> APIRouter:
 
 ## Comparison
 
-| Concern                 | App state  | Overrides | Router factories |
-| ----------------------- | ---------- | --------- | ---------------- |
-| Route readability       | Clean      | Clean     | Clean            |
-| Wiring boilerplate      | Low        | Medium    | High             |
-| Test isolation          | Good       | Best      | Best             |
-| Permission dependencies | Built-in   | Manual    | Manual           |
+| Concern                 | App state | Overrides | Router factories |
+| ----------------------- | --------- | --------- | ---------------- |
+| Route readability       | Clean     | Clean     | Clean            |
+| Wiring boilerplate      | Low       | Medium    | High             |
+| Test isolation          | Good      | Best      | Best             |
+| Permission dependencies | Built-in  | Built-in  | Manual           |
+| Typed handle to auth    | No        | Yes       | Yes              |
+
+The app-state pattern reads the auth instance back off `app.state`, which is
+untyped. The other two keep a real reference, so a wiring mistake is a name
+error rather than a runtime lookup that finds nothing.
 
 ## Testing
 
