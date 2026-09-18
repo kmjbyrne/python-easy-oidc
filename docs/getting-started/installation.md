@@ -2,24 +2,23 @@
 
 ## Basic
 
-```bash
-pip install oauth2
-```
-
-Or with [uv](https://docs.astral.sh/uv/):
+Install from the repository. The package is not on PyPI, and the `oauth2` name
+there belongs to an unrelated project.
 
 ```bash
-uv add oauth2
+uv pip install git+https://github.com/kmjbyrne/python-easy-oidc.git
 ```
 
 ## With FastAPI Support
 
 ```bash
-pip install oauth2[fastapi]
+uv pip install "oauth2[fastapi] @ git+https://github.com/kmjbyrne/python-easy-oidc.git"
 ```
 
+## Pin A Version
+
 ```bash
-uv add oauth2[fastapi]
+uv pip install git+https://github.com/kmjbyrne/python-easy-oidc.git@v0.1.0
 ```
 
 The FastAPI extra pulls in `fastapi` as a dependency. The core package depends

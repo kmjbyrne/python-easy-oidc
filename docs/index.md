@@ -22,7 +22,7 @@ from oauth2.contrib.fastapi import FastAPIAuth, current_user, require_permission
 from oauth2 import Principal
 
 app = FastAPI()
-app.state.auth = FastAPIAuth.from_settings(
+app.state.auth = FastAPIAuth(
     issuer="https://id.example.com",
     audience="my-api",
 )
