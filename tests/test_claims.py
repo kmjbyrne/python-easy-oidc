@@ -1,4 +1,4 @@
-from oauth2.claims import DefaultClaimMapper
+from oidcutils.claims import DefaultClaimMapper
 
 
 def test_default_mapper_standard_claims():

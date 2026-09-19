@@ -1,15 +1,15 @@
-"""Test helpers for apps using the oauth2 SDK.
+"""Test helpers for apps using the SDK.
 
 Provides token minting, header helpers, and a reusable test generator that
 verifies auth protection on any endpoint.
 
 Usage in conftest.py:
 
-    from oauth2.testing import dev_token, auth_header
+    from oidcutils.testing import dev_token, auth_header
 
 Usage for endpoint protection tests:
 
-    from oauth2.testing import assert_protected
+    from oidcutils.testing import assert_protected
 
     def test_orders_requires_auth(client):
         assert_protected(client, "/orders")
@@ -25,7 +25,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from oauth2.dev import mint_token
+from oidcutils.dev import mint_token
 
 DEFAULT_ISSUER = "http://localhost:8000"
 DEFAULT_AUDIENCE = "dev"

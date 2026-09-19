@@ -2,8 +2,8 @@ import time
 
 import pytest
 
-from oauth2.client import TokenSet
-from oauth2.tokens import InMemoryTokenStore, TokenManager
+from oidcutils.client import TokenSet
+from oidcutils.tokens import InMemoryTokenStore, TokenManager
 
 
 class FakeOIDCClient:

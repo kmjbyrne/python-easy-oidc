@@ -1,15 +1,15 @@
 """Mint a dev JWT from the command line.
 
 Usage:
-    python -m oauth2.mint --issuer http://localhost:8000 --audience my-api
-    python -m oauth2.mint --subject admin --roles admin,viewer --permissions orders.read
+    python -m oidcutils.mint --issuer http://localhost:8000 --audience my-api
+    python -m oidcutils.mint --subject admin --roles admin,viewer --permissions orders.read
 """
 
 import argparse
 import json
 import sys
 
-from oauth2.dev import mint_token
+from oidcutils.dev import mint_token
 
 
 def main() -> None:

@@ -2,23 +2,22 @@
 
 ## Basic
 
-Install from the repository. The package is not on PyPI, and the `oauth2` name
-there belongs to an unrelated project.
+Install from the repository. The package is not yet on PyPI.
 
 ```bash
-uv pip install git+https://github.com/kmjbyrne/python-easy-oidc.git
+uv pip install git+https://github.com/kmjbyrne/python-oidcutils.git
 ```
 
 ## With FastAPI Support
 
 ```bash
-uv pip install "oauth2[fastapi] @ git+https://github.com/kmjbyrne/python-easy-oidc.git"
+uv pip install "oidcutils[fastapi] @ git+https://github.com/kmjbyrne/python-oidcutils.git"
 ```
 
 ## Pin A Version
 
 ```bash
-uv pip install git+https://github.com/kmjbyrne/python-easy-oidc.git@v0.1.0
+uv pip install git+https://github.com/kmjbyrne/python-oidcutils.git@v0.1.0
 ```
 
 The FastAPI extra pulls in `fastapi` as a dependency. The core package depends

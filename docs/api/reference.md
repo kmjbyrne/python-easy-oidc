@@ -1,25 +1,35 @@
 # API Reference
 
-::: oauth2.principal.Principal
+::: oidcutils.principal.Principal
 
-::: oauth2.resource.TokenValidator
+::: oidcutils.resource.TokenValidator
 
-::: oauth2.resource.TokenError
+::: oidcutils.resource.TokenError
 
-::: oauth2.claims.DefaultClaimMapper
+::: oidcutils.claims.DefaultClaimMapper
 
-::: oauth2.client.OIDCClient
+::: oidcutils.client.OIDCClient
 
-::: oauth2.client.TokenSet
+::: oidcutils.client.TokenSet
 
-::: oauth2.tokens.TokenManager
+::: oidcutils.tokens.TokenManager
 
-::: oauth2.tokens.InMemoryTokenStore
+::: oidcutils.tokens.InMemoryTokenStore
 
-::: oauth2.contrib.fastapi.FastAPIAuth
+::: oidcutils.contrib.fastapi.FastAPIAuth
 
-::: oauth2.contrib.fastapi.current_user
+::: oidcutils.contrib.fastapi.current_user
 
-::: oauth2.contrib.fastapi.require_role
+::: oidcutils.contrib.fastapi.require_role
 
-::: oauth2.contrib.fastapi.require_permission
+::: oidcutils.contrib.fastapi.require_permission
+
+::: oidcutils.contrib.fastapi.create_dev_idp
+
+::: oidcutils.contrib.fastapi.dev_auth
+
+::: oidcutils.idp.serve
+
+::: oidcutils.dev.use_signing_key
+
+::: oidcutils.dev.load_signing_key

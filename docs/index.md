@@ -18,8 +18,8 @@ so service builds get auth in two lines, not fifty.
 
 ```python
 from fastapi import Depends, FastAPI
-from oauth2.contrib.fastapi import FastAPIAuth, current_user, require_permission
-from oauth2 import Principal
+from oidcutils.contrib.fastapi import FastAPIAuth, current_user, require_permission
+from oidcutils import Principal
 
 app = FastAPI()
 app.state.auth = FastAPIAuth(

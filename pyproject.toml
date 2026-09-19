@@ -1,5 +1,5 @@
 [project]
-name = "oauth2"
+name = "oidcutils"
 version = "0.1.0"
 description = "Lightweight OAuth2/OIDC SDK with optional FastAPI integration"
 readme = "README.md"
@@ -70,16 +70,17 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "S105", "S106", "D100", "D103", "D104", "PLR0913", "PLR2004", "ARG001", "ARG002", "PLC0415"]
+# S310: a test only ever opens a URL its own fixture is serving.
+"tests/**/*.py" = ["S101", "S105", "S106", "S310", "D100", "D103", "D104", "PLR0913", "PLR2004", "ARG001", "ARG002", "PLC0415"]
 "examples/**/*.py" = ["S101", "S105", "T20", "PLR0913", "ARG001", "B008"]
-"oauth2/mint.py" = ["T20"]
-"oauth2/testing.py" = ["S101", "PLR2004"]
-"oauth2/contrib/fastapi.py" = ["PLC0415", "PLR0913", "PLR0917", "ARG001"]
-"oauth2/client.py" = ["S105", "PLC0415", "PLR0913", "PLR0917"]
-"oauth2/dev.py" = ["PLR0913"]
+"oidcutils/mint.py" = ["T20"]
+"oidcutils/testing.py" = ["S101", "PLR2004"]
+"oidcutils/contrib/fastapi.py" = ["PLC0415", "PLR0913", "PLR0917", "ARG001"]
+"oidcutils/client.py" = ["S105", "PLC0415", "PLR0913", "PLR0917"]
+"oidcutils/dev.py" = ["PLR0913"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["oauth2", "tests"]
+known-first-party = ["oidcutils", "tests"]
 
 [tool.ruff.format]
 quote-style = "double"

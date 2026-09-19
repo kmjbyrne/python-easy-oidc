@@ -14,7 +14,7 @@ tedious and error-prone.
 Handles the OAuth2/OIDC protocol flows:
 
 ```python
-from oauth2 import OIDCClient
+from oidcutils import OIDCClient
 
 client = OIDCClient(
     issuer="https://id.example.com",
@@ -50,7 +50,7 @@ new_token_set = await client.refresh(token_set.refresh_token)
 Wraps storage and auto-refresh so consumers never think about token lifecycle:
 
 ```python
-from oauth2 import TokenManager
+from oidcutils import TokenManager
 
 manager = TokenManager(client)
 
@@ -73,7 +73,7 @@ manager = TokenManager(client, refresh_margin_seconds=60)
 The `TokenStore` protocol defines where tokens live between requests:
 
 ```python
-from oauth2 import TokenStore, TokenSet
+from oidcutils import TokenStore, TokenSet
 
 
 class RedisTokenStore:
@@ -82,7 +82,7 @@ class RedisTokenStore:
     async def delete(self, key: str) -> None: ...
 ```
 
-The SDK ships `InMemoryTokenStore` for scripts and tests. For web apps, implement
+The SDK ships `InMemoryTokenStore` for scripts and tests. For web apps, write
 the protocol with your preferred backend (Redis, database, encrypted session).
 
 ```python

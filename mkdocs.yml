@@ -1,6 +1,6 @@
-site_name: oauth2
+site_name: oidcutils
 site_description: Python OAuth2/OIDC SDK
-repo_url: https://github.com/keithmbyrne/oauth2
+repo_url: https://github.com/kmjbyrne/python-oidcutils
 
 theme:
   name: material

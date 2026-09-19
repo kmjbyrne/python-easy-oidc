@@ -1,15 +1,16 @@
 from collections.abc import Callable
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from oauth2.claims import ClaimMapper
-from oauth2.client import OIDCClient
-from oauth2.principal import Principal
-from oauth2.resource import TokenError, TokenValidator
-from oauth2.tokens import InMemoryTokenStore, TokenManager
+from oidcutils.claims import ClaimMapper
+from oidcutils.client import OIDCClient
+from oidcutils.principal import Principal
+from oidcutils.resource import TokenError, TokenValidator
+from oidcutils.tokens import InMemoryTokenStore, TokenManager
 
 
 class OIDCSettings:
@@ -33,12 +34,21 @@ class FastAPIAuth:
         *,
         algorithms: list[str] | None = None,
         claim_mapper: ClaimMapper | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
+        """Build auth against ``issuer``.
+
+        ``http_client`` is the client used to fetch discovery and JWKS. Pass one
+        to reach an issuer that is not on the network: an in-process dev IdP is
+        mounted rather than listening on a port, so it is reached with an
+        ``httpx.ASGITransport`` rather than a socket.
+        """
         self._validator = TokenValidator(
             issuer=issuer,
             audience=audience,
             algorithms=algorithms,
             claim_mapper=claim_mapper,
+            http_client=http_client,
         )
 
     @classmethod
@@ -196,7 +206,7 @@ def create_auth_router(
 
 def create_dev_router(issuer: str, audience: str, prefix: str = "/dev") -> APIRouter:
     """Mount discovery, JWKS, and token-minting endpoints for local development."""
-    from oauth2.dev import discovery_document, mint_token, public_jwks
+    from oidcutils.dev import discovery_document, mint_token, public_jwks
 
     router = APIRouter()
 
@@ -214,6 +224,46 @@ def create_dev_router(issuer: str, audience: str, prefix: str = "/dev") -> APIRo
         return mint_token(issuer=issuer, audience=audience, **body)
 
     return router
+
+
+def create_dev_idp(issuer: str, audience: str) -> FastAPI:
+    """Return a standalone app serving discovery, JWKS and token minting.
+
+    An app of its own rather than routes added to yours. That keeps the issuer
+    a separate thing from the application validating against it, so the app
+    makes an ordinary outward request for a key instead of calling itself.
+
+    Run it on its own port, or mount it in-process during development::
+
+        idp = create_dev_idp(issuer="http://localhost:8000/idp", audience="my-api")
+        app.mount("/idp", idp)
+
+    ``issuer`` must be the address the IdP answers on, mount path included, so
+    that the discovery document points at endpoints a client can actually
+    reach. Mounted in-process there is no port to reach it on, so the validator
+    needs an ``httpx.ASGITransport`` client: see :func:`dev_auth`.
+
+    It signs with an ephemeral key generated at import and mints a token for
+    anybody who asks, so it has no business anywhere but a developer's machine.
+    """
+    idp = FastAPI(title="Development IdP", docs_url=None, redoc_url=None)
+    idp.include_router(create_dev_router(issuer=issuer, audience=audience))
+    return idp
+
+
+def dev_auth(app: FastAPI, issuer: str, audience: str) -> FastAPIAuth:
+    """Return auth that reaches an in-process IdP rather than the network.
+
+    ``app`` is whatever the IdP is reachable through: the mounted parent, or
+    the IdP itself. Requests for discovery and JWKS are handed straight to it,
+    because an app mounted in another process is not listening on a port and a
+    test has no server at all.
+    """
+    return FastAPIAuth(
+        issuer=issuer,
+        audience=audience,
+        http_client=httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=issuer),
+    )
 
 
 def configure_dev(app: FastAPI, settings: OIDCSettings) -> None:

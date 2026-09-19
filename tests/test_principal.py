@@ -1,4 +1,4 @@
-from oauth2.principal import Principal
+from oidcutils.principal import Principal
 
 
 def test_has_role():

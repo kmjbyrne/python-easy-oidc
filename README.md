@@ -1,4 +1,4 @@
-# oauth2
+# oidcutils
 
 A Python SDK that wraps [Authlib](https://authlib.org/) and
 [joserfc](https://jose.authlib.org/) to handle OAuth2/OIDC token validation, and
@@ -9,22 +9,22 @@ routes without touching JWTs directly.
 
 ## Install
 
-Not on PyPI. Install directly from GitHub:
+Not on PyPI at the moment. Install directly from GitHub:
 
 ```bash
-uv pip install git+https://github.com/kmjbyrne/python-easy-oidc.git
+uv pip install git+https://github.com/kmjbyrne/python-oidcutils.git
 ```
 
 For FastAPI support:
 
 ```bash
-uv pip install "oauth2[fastapi] @ git+https://github.com/kmjbyrne/python-easy-oidc.git"
+uv pip install "oidcutils[fastapi] @ git+https://github.com/kmjbyrne/python-oidcutils.git"
 ```
 
 Pin to a version tag:
 
 ```bash
-uv pip install git+https://github.com/kmjbyrne/python-easy-oidc.git@v0.1.0
+uv pip install git+https://github.com/kmjbyrne/python-oidcutils.git@v0.1.0
 ```
 
 ## How It Works
@@ -47,7 +47,7 @@ in memory.
 ## Core Usage
 
 ```python
-from oauth2 import TokenValidator, Principal
+from oidcutils import TokenValidator, Principal
 
 validator = TokenValidator(
     issuer="https://id.example.com",
@@ -67,7 +67,7 @@ Consumers call `get_access_token()` and get back a valid token string. The
 manager refreshes transparently when the access token is near expiry.
 
 ```python
-from oauth2 import OIDCClient, TokenManager
+from oidcutils import OIDCClient, TokenManager
 
 client = OIDCClient(
     issuer="https://id.example.com",
@@ -99,8 +99,8 @@ Quick start with `app.state`:
 
 ```python
 from fastapi import Depends, FastAPI
-from oauth2.contrib.fastapi import FastAPIAuth, current_user, require_permission
-from oauth2 import Principal
+from oidcutils.contrib.fastapi import FastAPIAuth, current_user, require_permission
+from oidcutils import Principal
 
 app = FastAPI()
 app.state.auth = FastAPIAuth(
@@ -121,12 +121,45 @@ async def create_order(
     return {"created_by": user.subject}
 ```
 
+## Local Development
+
+Run a development identity provider with no external provider and nothing to
+configure:
+
+```bash
+uv run python -m oidcutils.idp --port 9000 --audience my-api
+```
+
+It serves discovery, JWKS and `POST /dev/token`, signing with an ES256 key
+generated in memory. Point your app at it:
+
+```bash
+OIDC_ISSUER=http://127.0.0.1:9000
+OIDC_AUDIENCE=my-api
+```
+
+Mint a token with whatever claims a test needs:
+
+```bash
+curl -s -XPOST http://127.0.0.1:9000/dev/token \
+  -H 'Content-Type: application/json' \
+  -d '{"subject": "user-1", "roles": ["admin"]}'
+```
+
+Built on `http.server`, so it needs nothing beyond this package. Supply
+`--signing-key` or `OIDC_DEV_SIGNING_KEY` where tokens have to survive a
+restart. For a single-process loop, `create_dev_idp` returns the same provider
+as a mountable app.
+
+It issues a signed token to anyone who asks, so it belongs on a developer's
+machine and nowhere else. See [Local Development](docs/examples/local-dev.md).
+
 ## Custom Claim Mapping
 
 If your IdP uses non-standard claim names, configure the mapper:
 
 ```python
-from oauth2.claims import DefaultClaimMapper
+from oidcutils.claims import DefaultClaimMapper
 
 mapper = DefaultClaimMapper(
     roles_claim="realm_roles",
@@ -157,13 +190,17 @@ Helper methods: `has_role()`, `has_permission()`, `has_any_role()`,
 
 ## Architecture
 
-```
-oauth2/
+```text
+oidcutils/
 ├── principal.py          # Identity model
 ├── claims.py             # Claim-to-Principal mapping
 ├── resource.py           # Token validation (joserfc)
 ├── client.py             # OIDC client (Authlib)
 ├── tokens.py             # Token storage and auto-refresh
+├── dev.py                # Dev signing key, minting, JWKS, discovery
+├── idp.py                # Standalone dev provider (http.server)
+├── mint.py               # Mint a dev token from the command line
+├── testing.py            # Test helpers for apps using the SDK
 └── contrib/
     └── fastapi.py        # FastAPI dependency functions
 ```

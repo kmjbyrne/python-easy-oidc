@@ -4,7 +4,7 @@ The `TokenValidator` validates JWT access tokens against an OIDC provider.
 
 ## How It Works
 
-```
+```text
 Token string
     |
     v
@@ -23,7 +23,7 @@ Claim Mapping   -->  Principal
 ## Configuration
 
 ```python
-from oauth2 import TokenValidator
+from oidcutils import TokenValidator
 
 validator = TokenValidator(
     issuer="https://id.example.com",

@@ -1,0 +1,27 @@
+{
+  // Line length: prose is wrapped by Prettier at 80, so keep the limit but
+  // relax the cases that cannot be sensibly wrapped.
+  "MD013": {
+    // Do not flag long lines inside fenced code blocks.
+    "code_blocks": false,
+    // Do not flag long lines in tables (padding pushes them over).
+    "tables": false,
+    // "stern" mode: only fail a too-long line if it COULD be broken. A line
+    // with no spaces past the limit (a bare URL or single long `inline-code`
+    // token) is left alone; mixed prose+link still flags.
+    "stern": true,
+  },
+
+  // MD024 (no duplicate headings) stays STRICT. Uniqueness is achieved by
+  // numbering repeated sub-headings ("### 1. Technical Design"), not by relaxing
+  // the rule. Do not add "siblings_only" here.
+
+  // MD036 (no bold-as-heading) stays STRICT. Use real headings for labels.
+
+  // Allow inline HTML if needed (remove to keep strict).
+  "MD033": false,
+
+  // First line need not be a top-level heading (docs pasted into Google Docs
+  // tabs often start mid-content). Remove to enforce it.
+  "MD041": false,
+}

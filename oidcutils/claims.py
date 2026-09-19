@@ -1,6 +1,6 @@
 from typing import Any, Protocol
 
-from oauth2.principal import Principal
+from oidcutils.principal import Principal
 
 
 class ClaimMapper(Protocol):

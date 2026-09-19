@@ -34,8 +34,8 @@ from joserfc.jwk import ECKey
 from pydantic import BaseModel
 from starlette.routing import Host
 
-from oauth2 import OIDCClient, Principal
-from oauth2.contrib.fastapi import (
+from oidcutils import OIDCClient, Principal
+from oidcutils.contrib.fastapi import (
     FastAPIAuth,
     create_auth_router,
     current_user,
@@ -251,7 +251,7 @@ async def admin_panel(user: Principal = Depends(require_role("admin"))):
 
 # --- Subdomain routing ---
 
-app = FastAPI(title="oauth2 Local Development")
+app = FastAPI(title="oidcutils Local Development")
 app.router.routes.extend(
     [
         Host(IDP_HOST, app=idp, name="idp"),

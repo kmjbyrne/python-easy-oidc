@@ -12,8 +12,8 @@ from joserfc.errors import (
 from joserfc.jwk import KeySet
 from joserfc.jwt import JWTClaimsRegistry
 
-from oauth2.claims import ClaimMapper, DefaultClaimMapper
-from oauth2.principal import Principal
+from oidcutils.claims import ClaimMapper, DefaultClaimMapper
+from oidcutils.principal import Principal
 
 
 class TokenError(Exception):

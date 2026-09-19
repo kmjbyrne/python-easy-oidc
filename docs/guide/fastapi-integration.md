@@ -9,13 +9,13 @@ trade-offs.
 
 ## Pattern 1: App State
 
-Store the auth instance on `app.state`. The SDK's dependency functions resolve it
+Store the auth instance on `app.state`. The SDK's dependency functions find it
 from the request automatically.
 
 ```python
 from fastapi import Depends, FastAPI
-from oauth2.contrib.fastapi import FastAPIAuth, current_user, require_permission
-from oauth2 import Principal
+from oidcutils.contrib.fastapi import FastAPIAuth, current_user, require_permission
+from oidcutils import Principal
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -32,7 +32,7 @@ def create_app(settings: Settings) -> FastAPI:
 `OIDCSettings` to your own settings class to pick up the field names it reads:
 
 ```python
-from oauth2.contrib.fastapi import OIDCSettings
+from oidcutils.contrib.fastapi import OIDCSettings
 from pydantic_settings import BaseSettings
 
 
@@ -155,8 +155,8 @@ because FastAPI resolves overrides by function identity through the whole
 dependency tree. No token is minted and the validator never reaches the issuer.
 
 ```python
-from oauth2 import Principal
-from oauth2.contrib.fastapi import current_user
+from oidcutils import Principal
+from oidcutils.contrib.fastapi import current_user
 
 app.dependency_overrides[current_user] = lambda: Principal(
     subject="test-user",

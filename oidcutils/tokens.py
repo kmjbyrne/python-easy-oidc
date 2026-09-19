@@ -1,7 +1,7 @@
 import time
 from typing import Protocol
 
-from oauth2.client import OIDCClient, TokenSet
+from oidcutils.client import OIDCClient, TokenSet
 
 
 class TokenStore(Protocol):

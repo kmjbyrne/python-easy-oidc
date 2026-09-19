@@ -4,12 +4,13 @@ from typing import Any
 import httpx
 import pytest
 from fastapi import Depends, FastAPI
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.testclient import TestClient
 from joserfc import jwt as jose_jwt
 from joserfc.jwk import RSAKey
 
-from oauth2 import Principal
-from oauth2.contrib.fastapi import (
+from oidcutils import Principal
+from oidcutils.contrib.fastapi import (
     FastAPIAuth,
     current_user,
     require_permission,
@@ -220,3 +221,35 @@ def test_guard_defaults_to_current_user():
     assert (
         inspect.signature(require_permission).parameters["user_dependency"].default is current_user
     )
+
+
+class TestSuppliedHttpClient:
+    """``http_client`` reaching an issuer that is not on the network.
+
+    An in-process provider is mounted rather than listening on a port, so the
+    validator cannot fetch its keys over a socket. Passing a client is what
+    makes that reachable, and it is the supported way to do it: a caller
+    reaching into the validator to swap its client is one rename from breaking.
+    """
+
+    async def test_keys_are_fetched_through_the_supplied_client(self):
+        keys = FastAPI()
+
+        @keys.get("/.well-known/openid-configuration")
+        async def discovery() -> dict[str, Any]:
+            return {"issuer": ISSUER, "jwks_uri": f"{ISSUER}/.well-known/jwks.json"}
+
+        @keys.get("/.well-known/jwks.json")
+        async def jwks() -> dict[str, Any]:
+            return _public_jwks()
+
+        auth = FastAPIAuth(
+            issuer=ISSUER,
+            audience=AUDIENCE,
+            http_client=httpx.AsyncClient(transport=httpx.ASGITransport(app=keys), base_url=ISSUER),
+        )
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=_make_token())
+
+        principal = await auth.get_principal(credentials)
+
+        assert principal.subject == "user-123"

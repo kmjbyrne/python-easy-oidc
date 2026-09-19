@@ -8,7 +8,7 @@ providers use different claim names for the same concepts.
 Works out of the box with standard OIDC claims:
 
 ```python
-from oauth2.claims import DefaultClaimMapper
+from oidcutils.claims import DefaultClaimMapper
 
 mapper = DefaultClaimMapper()
 ```
@@ -34,8 +34,8 @@ mapper = DefaultClaimMapper(
 Implement the `ClaimMapper` protocol for full control:
 
 ```python
-from oauth2.claims import ClaimMapper
-from oauth2 import Principal
+from oidcutils.claims import ClaimMapper
+from oidcutils import Principal
 
 
 class KeycloakMapper:
@@ -56,7 +56,7 @@ class KeycloakMapper:
 Wire it into the validator or FastAPI auth:
 
 ```python
-from oauth2 import TokenValidator
+from oidcutils import TokenValidator
 
 validator = TokenValidator(
     issuer="https://keycloak.example.com/realms/myrealm",

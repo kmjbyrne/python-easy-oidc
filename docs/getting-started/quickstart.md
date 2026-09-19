@@ -6,7 +6,7 @@ identity. No framework required.
 ## Validate a Token
 
 ```python
-from oauth2 import TokenValidator, Principal
+from oidcutils import TokenValidator, Principal
 
 validator = TokenValidator(
     issuer="https://id.example.com",
@@ -45,7 +45,7 @@ principal.has_all_permissions("orders.read", "orders.write")  # True
 ## Handle Errors
 
 ```python
-from oauth2 import TokenError
+from oidcutils import TokenError
 
 try:
     principal = await validator.validate_token(token)

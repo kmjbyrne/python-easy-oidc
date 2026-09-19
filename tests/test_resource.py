@@ -6,7 +6,7 @@ import pytest
 from joserfc import jwt as jose_jwt
 from joserfc.jwk import RSAKey
 
-from oauth2.resource import TokenError, TokenValidator
+from oidcutils.resource import TokenError, TokenValidator
 
 ISSUER = "https://id.example.com"
 AUDIENCE = "my-api"

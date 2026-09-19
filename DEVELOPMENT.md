@@ -62,13 +62,17 @@ See `examples/README.md` for the full walkthrough.
 
 ## Project Layout
 
-```
-src/oauth2/
+```text
+oidcutils/
 ├── principal.py      # Identity model
 ├── claims.py         # Claim-to-Principal mapping
 ├── resource.py       # Token validation (joserfc)
 ├── client.py         # OIDC client (Authlib)
 ├── tokens.py         # Token storage and auto-refresh
+├── dev.py            # Dev signing key, minting, JWKS, discovery
+├── idp.py            # Standalone dev provider (http.server)
+├── mint.py           # Mint a dev token from the command line
+├── testing.py        # Test helpers for apps using the SDK
 └── contrib/
     └── fastapi.py    # FastAPI dependency functions
 
@@ -77,7 +81,8 @@ tests/
 ├── test_claims.py
 ├── test_resource.py
 ├── test_tokens.py
-└── test_fastapi_contrib.py
+├── test_fastapi_contrib.py
+└── test_idp.py
 
 docs/                 # MkDocs Material source
 examples/             # Runnable local IdP + resource server
